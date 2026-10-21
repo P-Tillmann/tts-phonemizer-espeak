@@ -64,14 +64,18 @@ static void reply_error(const char * msg) {
 
 int main(int argc, char ** argv) {
     const char * data_dir = NULL;
+    int phoneme_mode = espeakPHONEMES_IPA;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--data-dir") && i + 1 < argc) {
             data_dir = argv[++i];
+        } else if (!strcmp(argv[i], "--tie") && i + 1 < argc) {
+            // tie character inside multi-letter phonemes, e.g. a^ɪ (ASCII only)
+            phoneme_mode |= espeakPHONEMES_TIE | ((unsigned char) argv[++i][0] << 8);
         } else if (!strcmp(argv[i], "--version")) {
             printf("tts-phonemizer-espeak %s, espeak-ng %s\n", VERSION, espeak_Info(NULL));
             return 0;
         } else {
-            fprintf(stderr, "usage: %s [--data-dir DIR] [--version]\n", argv[0]);
+            fprintf(stderr, "usage: %s [--data-dir DIR] [--tie CHAR] [--version]\n", argv[0]);
             fprintf(stderr, "the default data dir is espeak-ng-data next to the executable\n");
             fprintf(stderr, "reads <voice>\\t<text> lines on stdin, see the protocol in main.c\n");
             return 1;
@@ -111,7 +115,7 @@ int main(int argc, char ** argv) {
         const void * ptr = text;
         while (ptr != NULL) {
             int terminator = 0;
-            const char * ph = espeak_TextToPhonemesWithTerminator(&ptr, espeakCHARS_AUTO, espeakPHONEMES_IPA, &terminator);
+            const char * ph = espeak_TextToPhonemesWithTerminator(&ptr, espeakCHARS_AUTO, phoneme_mode, &terminator);
             if (!ph) {
                 break;
             }

@@ -21,7 +21,9 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ```
 
-The compiled voice data is in `../espeak-ng/build/espeak-ng-data`; pass it with `--data-dir`.
+The compiled voice data is in `../espeak-ng/build/espeak-ng-data`; pass it with `--data-dir`, or put it next to the executable.
+
+`--tie CHAR` joins the letters of multi-letter phonemes with CHAR (e.g. `a^ɪ`), as the `phonemizer` package does with `tie='^'`.
 
 ## Protocol
 

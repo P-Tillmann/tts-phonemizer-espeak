@@ -17,9 +17,12 @@
 
 #include <espeak-ng/speak_lib.h>
 
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #define VERSION "0.1.0"
 #define CLAUSE_TYPE_SENTENCE 0x00080000
@@ -37,6 +40,23 @@ static void unescape(char * s) {
     *w = 0;
 }
 
+// default data dir: espeak-ng-data next to the executable, if it exists
+static const char * exe_data_dir(void) {
+    static char buf[PATH_MAX];
+    ssize_t n = readlink("/proc/self/exe", buf, sizeof(buf) - 32);
+    if (n <= 0) {
+        return NULL;
+    }
+    buf[n] = 0;
+    char * slash = strrchr(buf, '/');
+    if (!slash) {
+        return NULL;
+    }
+    strcpy(slash + 1, "espeak-ng-data");
+    struct stat st;
+    return stat(buf, &st) == 0 && S_ISDIR(st.st_mode) ? buf : NULL;
+}
+
 static void reply_error(const char * msg) {
     printf("ERR\t%s\nEND\n", msg);
     fflush(stdout);
@@ -52,9 +72,13 @@ int main(int argc, char ** argv) {
             return 0;
         } else {
             fprintf(stderr, "usage: %s [--data-dir DIR] [--version]\n", argv[0]);
+            fprintf(stderr, "the default data dir is espeak-ng-data next to the executable\n");
             fprintf(stderr, "reads <voice>\\t<text> lines on stdin, see the protocol in main.c\n");
             return 1;
         }
+    }
+    if (!data_dir) {
+        data_dir = exe_data_dir();
     }
     if (espeak_Initialize(AUDIO_OUTPUT_SYNCHRONOUS, 0, data_dir, 0) < 0) {
         fprintf(stderr, "failed to initialize espeak-ng (data dir: %s)\n", data_dir ? data_dir : "default");

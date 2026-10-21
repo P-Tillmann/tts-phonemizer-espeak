@@ -36,4 +36,6 @@ response: <terminator>\t<sentence_end>\t<phonemes>\n     one line per clause
 on error: ERR\t<message>\n then END\n
 ```
 
+`voice` is an espeak-ng voice name (`en-us`) or a language code (`en-gb`); a language code selects the first voice whose main language it is, like the phonemizer Python package.
+
 `terminator` is the espeak clause terminator masked with `0xFFFFF`, `sentence_end` is 1 if the clause ends a sentence. `phonemes` is the raw espeak IPA output; normalization, language-switch markers and punctuation are handled by the caller.

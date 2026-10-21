@@ -57,6 +57,22 @@ static const char * exe_data_dir(void) {
     return stat(buf, &st) == 0 && S_ISDIR(st.st_mode) ? buf : NULL;
 }
 
+// a voice name (e.g. en-us), else a language code like phonemizer: the first voice whose main language it is (en-gb -> gmw/en)
+static int set_voice(const char * name) {
+    if (espeak_SetVoiceByName(name) == EE_OK) {
+        return 1;
+    }
+    const espeak_VOICE ** voices = espeak_ListVoices(NULL);
+    for (int i = 0; voices && voices[i]; i++) {
+        // languages: priority byte, then the language name
+        const char * lang = voices[i]->languages ? voices[i]->languages + 1 : "";
+        if (strcmp(lang, name) == 0) {
+            return espeak_SetVoiceByName(voices[i]->identifier) == EE_OK;
+        }
+    }
+    return 0;
+}
+
 static void reply_error(const char * msg) {
     printf("ERR\t%s\nEND\n", msg);
     fflush(stdout);
@@ -105,7 +121,7 @@ int main(int argc, char ** argv) {
         *text++ = 0;
         unescape(text);
         if (strcmp(line, voice) != 0) {
-            if (strlen(line) >= sizeof(voice) || espeak_SetVoiceByName(line) != EE_OK) {
+            if (strlen(line) >= sizeof(voice) || !set_voice(line)) {
                 voice[0] = 0;
                 reply_error("unknown voice");
                 continue;
